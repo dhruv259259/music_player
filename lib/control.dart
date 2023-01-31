@@ -1,15 +1,33 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 import 'package:get/get.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class control extends GetxController
+
+
+class control1 extends GetxController
 {
-  RxList<bool> list=<bool>[].obs;
   RxList sear=[].obs;
   RxBool search=false.obs;
-  List<SongModel> songlist=[];
+
   RxBool m=false.obs;
-  permition()
+  RxInt next=0.obs;
+
+  final player = AudioPlayer();
+  RxBool play1 = false.obs;
+  //double current_time = 0;
+  List<SongModel> songlist=[];
+  RxList<bool> list=<bool>[].obs;
+  RxInt con=0.obs;
+  RxDouble currentduretion=0.0.obs;
+  RxDouble totalduretion=0.0.obs;
+
+  OnAudioQuery _audioQuery = OnAudioQuery();
+  getsongs()
   async {
     var status = await Permission.camera.status;
     if(status.isDenied)
@@ -17,16 +35,27 @@ class control extends GetxController
       Map<Permission, PermissionStatus> statuses = await [
         Permission.storage,
       ].request();
-      //print(statuses[Permission.location]);
     }
-  }
-  OnAudioQuery _audioQuery = OnAudioQuery();
-  getsongs()
-  async {
     songlist = await _audioQuery.querySongs();
-    print("songs${songlist}");
+    //print("songs${songlist1}");
     list.value=List.filled(songlist.length,false);
-    // m.value=true;
+    play1.value=true;
+  }
+  pause(index)
+  async {
+    final duration = await player.setFilePath(songlist[index].data);
+    player.stop();
+    list.value=List.filled(songlist.length, false);
+
+  }
+  play(index)
+  async {
+    final duration = await player.setFilePath(songlist[index].data);
+    player.play();
+    list.value=List.filled(songlist.length, false);
+    list.value[index]=true;
+    con.value=index;
+    print("hello");
   }
   String printDuration(Duration duration) {
     String twoDigits(int n) {
@@ -42,6 +71,28 @@ class control extends GetxController
     } else {
       return "$twoDigitMinutes:$twoDigitSeconds";
     }
+  }
+  sliderduretion()
+  {
+    player.positionStream.listen((event) {
+
+      currentduretion.value=event.inMilliseconds.toDouble();
+
+    });
+    player.setFilePath(songlist[con.value].data).then((value) {
+      totalduretion.value=value!.inMilliseconds.toDouble();
+
+
+    });
+    player.processingStateStream.listen((event) {
+      if(event==ProcessingState.completed)
+      {
+        con.value++;
+        player.setFilePath(songlist[con.value].data).then((value) {
+          totalduretion.value=value!.inMicroseconds.toDouble();
+        },);
+      }
+    });
   }
 
 }

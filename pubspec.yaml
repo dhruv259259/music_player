@@ -39,6 +39,10 @@ dependencies:
   on_audio_query:
   just_audio:
   permission_handler:
+  flutter_media_metadata:
+  provider:
+  marquee_text:
+  lottie:
 
 dev_dependencies:
   flutter_test:
